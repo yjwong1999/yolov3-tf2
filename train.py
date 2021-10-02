@@ -21,7 +21,6 @@ import yolov3_tf2.dataset as dataset
 
 flags.DEFINE_string('dataset', '', 'path to dataset')
 flags.DEFINE_string('val_dataset', '', 'path to validation dataset')
-flags.DEFINE_boolean('tiny', False, 'yolov3 or yolov3-tiny')
 flags.DEFINE_string('weights', './checkpoints/yolov3.tf',
                     'path to weights file')
 flags.DEFINE_string('classes', './data/coco.names', 'path to classes file')
@@ -29,13 +28,15 @@ flags.DEFINE_enum('mode', 'fit', ['fit', 'eager_fit', 'eager_tf'],
                   'fit: model.fit, '
                   'eager_fit: model.fit(run_eagerly=True), '
                   'eager_tf: custom GradientTape')
+flags.DEFINE_enum('backbone', 'darknet',
+                  ['darknet', 'tiny', 'mobilenet'],
+                  'darknet: darknet53, '
+                  'tiny: tiny darknet, '
+                  'mobilenet: Transfer all and freeze darknet only')
 flags.DEFINE_enum('transfer', 'none',
-                  ['none', 'darknet', 'no_output', 'mobilenet', 'frozen', 'fine_tune'],
-                  'none: Training from scratch, '
-                  'darknet: Transfer darknet, '
-                  'no_output: Transfer all but output, '
-                  'frozen: Transfer and freeze all, '
-                  'fine_tune: Transfer all and freeze darknet only')
+                  ['none', 'no_output'],
+                  'none: train from scratch, '
+                  'no_output: Transfer and freeze all layers except output')                  
 flags.DEFINE_integer('size', 416, 'image size')
 flags.DEFINE_integer('epochs', 2, 'number of epochs')
 flags.DEFINE_integer('batch_size', 8, 'batch size')
@@ -47,58 +48,44 @@ flags.DEFINE_boolean('multi_gpu', False, 'Use if wishing to train with more than
 
 
 def setup_model():
-    if FLAGS.transfer != 'mobilenet':
-        if FLAGS.tiny:
-            model = YoloV3Tiny(FLAGS.size, training=True,
-                              classes=FLAGS.num_classes)
-            anchors = yolo_tiny_anchors
-            anchor_masks = yolo_tiny_anchor_masks
-        else:
+    if FLAGS.backbone == 'tiny':
+        model = YoloV3Tiny(FLAGS.size, training=True,
+                          classes=FLAGS.num_classes)
+        anchors = yolo_tiny_anchors
+        anchor_masks = yolo_tiny_anchor_masks
+    else:
+        if FLAGS.backbone == 'darknet':
             model = YoloV3(FLAGS.size, training=True, classes=FLAGS.num_classes)
-            anchors = yolo_anchors
-            anchor_masks = yolo_anchor_masks
-
-        # Configure the model for transfer learning
-        if FLAGS.transfer == 'none':
-            pass  # Nothing to do
-        elif FLAGS.transfer in ['darknet', 'no_output']:
-            # Darknet transfer is a special case that works
-            # with incompatible number of classes
-            # reset top layers
-            if FLAGS.tiny:
-                model_pretrained = YoloV3Tiny(
-                    FLAGS.size, training=True, classes=FLAGS.weights_num_classes or FLAGS.num_classes)
-            else:
-                model_pretrained = YoloV3(
-                    FLAGS.size, training=True, classes=FLAGS.weights_num_classes or FLAGS.num_classes)
-            model_pretrained.load_weights(FLAGS.weights)
-
-            if FLAGS.transfer == 'darknet':
-                model.get_layer('yolo_darknet').set_weights(
-                    model_pretrained.get_layer('yolo_darknet').get_weights())
-                freeze_all(model.get_layer('yolo_darknet'))
-            elif FLAGS.transfer == 'no_output':
-                for l in model.layers:
-                    if not l.name.startswith('yolo_output'):
-                        l.set_weights(model_pretrained.get_layer(
-                            l.name).get_weights())
-                        freeze_all(l)
-        else:
-            # All other transfer require matching classes
-            model.load_weights(FLAGS.weights)
-            if FLAGS.transfer == 'fine_tune':
-                # freeze darknet and fine tune other layers
-                darknet = model.get_layer('yolo_darknet')
-                freeze_all(darknet)
-            elif FLAGS.transfer == 'frozen':
-                # freeze everything
-                freeze_all(model)
-    elif FLAGS.transfer == 'mobilenet':
+        elif FLAGS.backbone == 'mobilenet':
+            model = MobilenetYoloV3(
+                      FLAGS.size, training=True, classes=FLAGS.num_classes)
         anchors = yolo_anchors
-        anchor_masks = yolo_anchor_masks    
-        model = MobilenetYoloV3(
-          FLAGS.size, training=True, classes=FLAGS.weights_num_classes or FLAGS.num_classes)
+        anchor_masks = yolo_anchor_masks
+    
+    if FLAGS.transfer == 'none':
+        # do nothing
+        pass 
+    elif FLAGS.transfer == 'no_output':
+        # get pretrained network
+        # only darknet works for different input size
+        if FLAGS.backbone == 'tiny':
+            model_pretrained = YoloV3Tiny(
+                FLAGS.size, training=True, classes=FLAGS.weights_num_classes or FLAGS.num_classes)
+        elif FLAGS.backbone == 'darknet':
+            model_pretrained = YoloV3(
+                FLAGS.size, training=True, classes=FLAGS.weights_num_classes or FLAGS.num_classes)
+        else:
+            model_pretrained = MobilenetYoloV3(
+                FLAGS.size, training=True, classes=FLAGS.weights_num_classes or FLAGS.num_classes)                
+        model_pretrained.load_weights(FLAGS.weights)
+        # transfer weights and freeze them
+        for l in model.layers:
+            if not l.name.startswith('yolo_output'):
+                l.set_weights(model_pretrained.get_layer(
+                    l.name).get_weights())
+                freeze_all(l)      
 
+    # get optimizer, loss
     optimizer = tf.keras.optimizers.Adam(lr=FLAGS.learning_rate)
     loss = [YoloLoss(anchors[mask], classes=FLAGS.num_classes)
             for mask in anchor_masks]
