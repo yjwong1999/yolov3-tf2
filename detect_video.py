@@ -3,8 +3,8 @@ from absl import app, flags, logging
 from absl.flags import FLAGS
 import cv2
 import tensorflow as tf
-from yolov3_tf2.models import (
-    YoloV3, YoloV3Tiny
+from yolov3_tf2.new_models import (
+    YoloV3, YoloV3Tiny, MobilenetYoloV3
 )
 from yolov3_tf2.dataset import transform_images
 from yolov3_tf2.utils import draw_outputs
@@ -13,7 +13,11 @@ from yolov3_tf2.utils import draw_outputs
 flags.DEFINE_string('classes', './data/coco.names', 'path to classes file')
 flags.DEFINE_string('weights', './checkpoints/yolov3.tf',
                     'path to weights file')
-flags.DEFINE_boolean('tiny', False, 'yolov3 or yolov3-tiny')
+flags.DEFINE_enum('backbone', 'darknet',
+                  ['darknet', 'tiny', 'mobilenet'],
+                  'darknet: Transfer darknet for yolov3, '
+                  'tiny: Transfer darknet for yolov3-tiny, '
+                  'mobilenet: Transfer mobilenet, ')
 flags.DEFINE_integer('size', 416, 'resize images to')
 flags.DEFINE_string('video', './data/video.mp4',
                     'path to video file or number for webcam)')
@@ -27,10 +31,12 @@ def main(_argv):
     for physical_device in physical_devices:
         tf.config.experimental.set_memory_growth(physical_device, True)
 
-    if FLAGS.tiny:
+    if FLAGS.backbone == 'tiny':
         yolo = YoloV3Tiny(classes=FLAGS.num_classes)
-    else:
+    elif FLAGS.backbone == 'darknet':
         yolo = YoloV3(classes=FLAGS.num_classes)
+    elif FLAGS.backbone == 'mobilenet':
+        yolo = MobilenetYoloV3(classes=FLAGS.num_classes)
 
     yolo.load_weights(FLAGS.weights)
     logging.info('weights loaded')
