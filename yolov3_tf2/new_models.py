@@ -40,6 +40,7 @@ yolo_tiny_anchors = np.array([(10, 14), (23, 27), (37, 58),
                              np.float32) / 416
 yolo_tiny_anchor_masks = np.array([[3, 4, 5], [0, 1, 2]])
 
+backbone_is_mobilenet = False
 
 def DepthPointConv(filters, kernel_size, strides, padding, use_bias):
     def depth_point_conv(x_in):
@@ -73,7 +74,10 @@ def DarknetConv(x, filters, size, strides=1, batch_norm=True, ori_conv=True):
                    use_bias=not batch_norm, kernel_regularizer=l2(0.0005))(x)
         if batch_norm:
             x = BatchNormalization()(x)
-            x = ReLU(6.)(x) #LeakyReLU(alpha=0.1)(x) 
+            if backbone_is_mobilenet:
+                x = ReLU(6.)(x) 
+            else:
+                x = LeakyReLU(alpha=0.1)(x) 
     # depthwise separable convolution layer
     else:
         x = DepthPointConv(filters=filters, kernel_size=size,
@@ -316,6 +320,10 @@ def yolo_nms(outputs, anchors, masks, classes):
 
 def MobilenetYoloV3(size=None, channels=3, anchors=yolo_anchors,
                     masks=yolo_anchor_masks, classes=80, training=False):
+    # by default, backbone is darknet53 or the smaller darknet
+    global backbone_is_mobilenet
+    backbone_is_mobilenet = True
+
     x = inputs = Input([size, size, channels], name='input')
 
     x_36, x_61, x = MobilenetBackbone(name='mobilenet')(x)
@@ -333,7 +341,7 @@ def MobilenetYoloV3(size=None, channels=3, anchors=yolo_anchors,
                           lightweight=True, name='yolo_output_2')(x)
 
     if training:
-        return Model(inputs, (output_0, output_1, output_2), name='yolov3')
+        return Model(inputs, (output_0, output_1, output_2), name='mobilenet-yolov3')
 
     boxes_0 = Lambda(lambda x: yolo_boxes(x, anchors[masks[0]], classes),
                      name='yolo_boxes_0')(output_0)
@@ -345,11 +353,15 @@ def MobilenetYoloV3(size=None, channels=3, anchors=yolo_anchors,
     outputs = Lambda(lambda x: yolo_nms(x, anchors, masks, classes),
                      name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
 
-    return Model(inputs, outputs, name='yolov3')
+    return Model(inputs, outputs, name='mobilenet-yolov3')
 
 
 def YoloV3(size=None, channels=3, anchors=yolo_anchors,
            masks=yolo_anchor_masks, classes=80, training=False):
+    # by default, backbone is darknet53 or the smaller darknet
+    global backbone_is_mobilenet
+    backbone_is_mobilenet = False
+
     x = inputs = Input([size, size, channels], name='input')
 
     x_36, x_61, x = Darknet(name='yolo_darknet')(x)
@@ -381,6 +393,10 @@ def YoloV3(size=None, channels=3, anchors=yolo_anchors,
 
 def YoloV3Tiny(size=None, channels=3, anchors=yolo_tiny_anchors,
                masks=yolo_tiny_anchor_masks, classes=80, training=False):
+    # by default, backbone is darknet53 or the smaller darknet
+    global backbone_is_mobilenet
+    backbone_is_mobilenet = False
+
     x = inputs = Input([size, size, channels], name='input')
 
     x_8, x = DarknetTiny(name='yolo_darknet')(x)
