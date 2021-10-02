@@ -4,6 +4,10 @@
 
 This repo provides a clean implementation of YoloV3 in TensorFlow 2.0 using all the best practices.
 
+## TODO
+- [] Update the code in /yolov3_tf2/tools
+- [] Add multi-task
+
 ## Key Features
 
 - [x] TensorFlow 2.0
