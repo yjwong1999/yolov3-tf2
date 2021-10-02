@@ -133,7 +133,7 @@ def MobilenetBackbone(size=416, alpha=1.4, name='mobilenet'):
 
     # Create the feature extraction model
     backbone = tf.keras.Model(inputs=base_model.input, outputs=base_model_outputs, name=name)
-    backbone.load_weights('../checkpoints/pretrained_mobilenet')
+    # backbone.load_weights('../checkpoints/pretrained_mobilenet')
     backbone.trainable = False
 
     return backbone
