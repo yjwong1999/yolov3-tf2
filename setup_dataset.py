@@ -23,7 +23,7 @@ flags.DEFINE_integer('weights_num_classes', 80, 'number of classes in the model'
 
 def annotate(model_pretrained, img_paths, json_path, name):
     # annotate dataset if haven annotate
-    # data_root = tf.convert_to_tensor('./crisis_vision_benchmarks/')
+    # data_root = tf.convert_to_tensor('./crisis_vision_benchmarks/') #tf.io.read_file seems to require absolute path
     data_root = tf.convert_to_tensor(os.getcwd() + '/crisis_vision_benchmarks/')
     if not os.path.isfile(json_path):
         # start annotating
