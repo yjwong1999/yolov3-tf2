@@ -10,6 +10,7 @@ This repo provides a clean implementation of YoloV3 in TensorFlow 2.0 using all 
 - [] so far, i can only do tranfer learning for backbone + fpn layers of mobilenet-yolo
 - [] train_victim_detection.py is hardcoded (for the json path)
 - [] change setup.py
+- [] add setup.ipynb (maybe have to change name, if so, change the warning message in train_victim_detection.py
 
 ## Key Features
 
