@@ -31,16 +31,3 @@ def get_annotation(json_path, max_limit):
                 break
                 
     return img_paths, annots
-
-MAX_LIMIT = None
-train_json_path = 'others/train_damage_severity_person.json'
-val_json_path = 'others/val_damage_severity_person.json'
-test_json_path = 'others/test_damage_severity_person.json'
-
-train_img_paths, train_annots = get_annotation(train_json_path, MAX_LIMIT)
-val_img_paths, val_annots = get_annotation(val_json_path, MAX_LIMIT)
-test_img_paths, test_annots = get_annotation(test_json_path, MAX_LIMIT)
-
-print(len(train_annots))
-print(len(val_annots))
-print(len(test_annots))
