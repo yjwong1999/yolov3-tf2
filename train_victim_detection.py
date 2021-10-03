@@ -18,8 +18,8 @@ from yolov3_tf2.new_models import (
     yolo_tiny_anchors, yolo_tiny_anchor_masks
 )
 from yolov3_tf2.utils import freeze_all
-import yolov3_tf2.dataset as dataset
 from multitask.utils import get_annotation
+from multitask import victim_dataset_utils as dataset
 
 # flags.DEFINE_string('dataset', '', 'path to dataset')
 # flags.DEFINE_string('val_dataset', '', 'path to validation dataset')
@@ -34,7 +34,7 @@ flags.DEFINE_enum('backbone', 'darknet',
                   'darknet: darknet53, '
                   'tiny: tiny darknet, '
                   'mobilenet: Transfer all and freeze darknet only')
-flags.DEFINE_enum('transfer', 'none',
+flags.DEFINE_enum('transfer', 'no_output',
                   ['none', 'no_output'],
                   'none: train from scratch, '
                   'no_output: Transfer and freeze all layers except output')                  
@@ -46,7 +46,7 @@ flags.DEFINE_integer('num_classes', 80, 'number of classes in the model')
 flags.DEFINE_integer('weights_num_classes', None, 'specify num class for `weights` file if different, '
                      'useful in transfer learning with different number of classes')
 flags.DEFINE_boolean('multi_gpu', False, 'Use if wishing to train with more than 1 GPU.')
-flags.DEFINE_string('checkpoints', '', 'paths to save checkpoints during training')
+flags.DEFINE_string('checkpoints', '', 'the directory to save checkpoints during training')
 
 
 
@@ -156,24 +156,24 @@ def main(_argv):
         model, optimizer, loss, anchors, anchor_masks = setup_model()
 
     # get dataset
-    assert FLAGS.checkpoint != '', 'Must specified a checkpoint path'
+    assert FLAGS.checkpoints != '', 'Must specified a checkpoint path'
     train_dataset, val_dataset, test_dataset = get_dataset()
-    
+
     # transform dataset
     # (1) training dataset
     train_dataset = train_dataset.shuffle(buffer_size=512)
-    train_dataset = train_dataset.batch(FLAGS.batch_size)
     train_dataset = train_dataset.map(lambda x, y: (
-        dataset.transform_images(x, FLAGS.size),
-        dataset.transform_targets(y, anchors, anchor_masks, FLAGS.size)))
+        dataset.load_image(x, FLAGS.size, augmentation=False),
+        dataset.transform_target(y, anchors, anchor_masks, FLAGS.size)))    
+    train_dataset = train_dataset.batch(FLAGS.batch_size)
     train_dataset = train_dataset.prefetch(
-        buffer_size=tf.data.experimental.AUTOTUNE)
+        buffer_size=tf.data.AUTOTUNE)
     
     # (2) validation dataset
-    val_dataset = val_dataset.batch(FLAGS.batch_size)
     val_dataset = val_dataset.map(lambda x, y: (
-        dataset.transform_images(x, FLAGS.size),
-        dataset.transform_targets(y, anchors, anchor_masks, FLAGS.size)))
+        dataset.load_image(x, FLAGS.size, augmentation=False),
+        dataset.transform_target(y, anchors, anchor_masks, FLAGS.size)))
+    val_dataset = val_dataset.batch(FLAGS.batch_size)
     
     # training
     if FLAGS.mode == 'eager_tf':
@@ -222,13 +222,13 @@ def main(_argv):
             avg_loss.reset_states()
             avg_val_loss.reset_states()
             model.save_weights(
-                'checkpoints/yolov3_train_{}.tf'.format(epoch))
+                '{}/yolov3_train_{}.tf'.format(FLAGS.checkpoints, epoch))
     else:
-
+        checkpoint = '{}/yolov3_train'.format(FLAGS.checkpoints) + '_{epoch}.tf'
         callbacks = [
             ReduceLROnPlateau(verbose=1),
             EarlyStopping(patience=3, verbose=1),
-            ModelCheckpoint('checkpoints/yolov3_train_{epoch}.tf',
+            ModelCheckpoint(checkpoint,
                             verbose=1, save_weights_only=True),
             TensorBoard(log_dir='logs')
         ]
