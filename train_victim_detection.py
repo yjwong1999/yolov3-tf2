@@ -107,7 +107,7 @@ def get_dataset():
     val_json_path = './others/val_damage_severity_person.json'
     test_json_path = './others/test_damage_severity_person.json'
     for path in [train_json_path, val_json_path, test_json_path]:
-        warning_message = f"'{path} does not exist! Please run 'Follow the instruction in setup.txt'!"
+        warning_message = f"'{path} does not exist! Please run ./setup.ipynb !"
         assert os.path.isfile(path), warning_message
     
     # get the img paths and annotations
