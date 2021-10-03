@@ -23,6 +23,7 @@ flags.DEFINE_integer('weights_num_classes', 80, 'number of classes in the model'
 
 def annotate(model_pretrained, img_paths, json_path, name):
     # annotate dataset if haven annotate
+    data_root = tf.convert_to_tensor('./crisis_vision_benchmarks/')
     if not os.path.isfile(json_path):
         # start annotating
         print('Start annotating...')
@@ -40,6 +41,7 @@ def annotate(model_pretrained, img_paths, json_path, name):
         # iterate all images
         for img_path in img_paths:
             # load image
+            img_path = tf.strings.join([data_root, img_path])
             img = tf.io.read_file(img_path)
             img = tf.image.decode_jpeg(img, channels=3)
             img = tf.image.resize(img, (FLAGS.size, FLAGS.size)) / 255.0
