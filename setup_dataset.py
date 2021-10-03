@@ -110,7 +110,7 @@ def main(_argv):
     # setup the pretrained model
     model_pretrained = YoloV3(
         FLAGS.size, training=False, classes=FLAGS.weights_num_classes,
-        anchors = yolo_anchors, anchor_masks = yolo_anchor_masks) 
+        anchors = yolo_anchors, masks = yolo_anchor_masks) 
     model_pretrained.load_weights(FLAGS.weights)
     
     # get the original annotation path
