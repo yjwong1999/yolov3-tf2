@@ -20,7 +20,7 @@
 !python ./convert.py \
         --weights ./data/yolov3.weights \
         --output ./checkpoints/yolov3.tf \
-        --backbone darknet
+        --backbone darknet \
         --num_classes 80
         
 # yolov3-tiny
@@ -28,7 +28,7 @@
 !python ./convert.py \
         --weights ./data/yolov3-tiny.weights \
         --output ./checkpoints/yolov3-tiny.tf \
-        --backbone tiny
+        --backbone tiny \
         --num_classes 80
         
 
