@@ -11,6 +11,7 @@ This repo provides a clean implementation of YoloV3 in TensorFlow 2.0 using all 
 - [] train_victim_detection.py is hardcoded (for the json path)
 - [] change setup.py
 - [] add setup.ipynb (maybe have to change name, if so, change the warning message in train_victim_detection.py
+- [] delete colab_gpu.ipynb
 
 ## Key Features
 
