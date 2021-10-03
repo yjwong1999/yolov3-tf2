@@ -142,7 +142,7 @@ def main(_argv):
              'testing']
     
     if not os.path.isdir('./others'):
-        os.mkdir(_path)
+        os.mkdir('./others')
     
     for img_paths, json_filename, name in zip(img_paths_collection, json_filenames, names):
         annotate(model_pretrained, img_paths, json_filename, name)    
