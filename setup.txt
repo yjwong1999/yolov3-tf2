@@ -1,12 +1,20 @@
-######################################
-# Download pretrained mobilenet-yolo weights manually using this link
-######################################
+############################################################################
+# Download pretrained mobilenet-yolo weights using this link (and convert it)
+############################################################################
 - https://drive.google.com/file/d/1B0vVQsuWY-zfuyol38-R5XJs1mntIwqZ/view
 - save the file as "mobilenetv2_trained_weights_final.h5" in directory: ./data
 
-######################################
-# download weights
-######################################
+# mobilenet-yolo
+!python ./convert.py \
+        --weights ./data/mobilenetv2_trained_weights_final.h5 \
+        --output ./checkpoints/mobilenetv2_trained_weights_final.tf \
+        --backbone mobilenet \
+        --num_classes 20
+     
+     
+############################################################################
+# Download weights and convert weights for yolov3 and yolov3-tiny
+############################################################################
 # yolov3
 !wget https://pjreddie.com/media/files/yolov3.weights -O ./data/yolov3.weights
 !python ./convert.py \
@@ -23,14 +31,29 @@
         --backbone tiny
         --num_classes 80
         
-# mobilenet-yolo
-!python ./convert.py \
-        --weights ./data/mobilenetv2_trained_weights_final.h5 \
-        --output ./checkpoints/mobilenetv2_trained_weights_final.tf \
-        --backbone mobilenet \
-        --num_classes 20
 
-######################################
+############################################################################
+# download and setup voc2012 dataset
+############################################################################
+!mkdir -p ./data/voc2012_raw
+!wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar -O ./data/voc2012_raw.tar
+!tar -xf ./data/voc2012_raw.tar -C ./data/voc2012_raw
+!ls ./data/voc2012_raw/VOCdevkit/VOC2012 # Explore the dataset
+
+!python ./tools/voc2012.py \
+--data_dir './data/voc2012_raw/VOCdevkit/VOC2012' \
+--split train \
+--output_file ./data/voc2012_train.tfrecord
+
+!python ./tools/voc2012.py \
+--data_dir './data/voc2012_raw/VOCdevkit/VOC2012' \
+--split val \
+--output_file ./data/voc2012_val.tfrecord
+      
+      
+############################################################################
 # setup dataset for victim dataset
-######################################
+############################################################################
+!wget --tries=30 https://crisisnlp.qcri.org/data/crisis_image_datasets_benchmarks/crisis_vision_benchmarks.tar.gz
+!tar --gunzip --extract --verbose --file=crisis_vision_benchmarks.tar.gz
 !python ./setup_dataset.py
