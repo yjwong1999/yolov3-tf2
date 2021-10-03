@@ -1,7 +1,8 @@
 ######################################
 # Download pretrained mobilenet-yolo weights manually using this link
 ######################################
-https://drive.google.com/file/d/1B0vVQsuWY-zfuyol38-R5XJs1mntIwqZ/view
+- https://drive.google.com/file/d/1B0vVQsuWY-zfuyol38-R5XJs1mntIwqZ/view
+- save the file as "mobilenetv2_trained_weights_final.h5" in directory: ./data
 
 ######################################
 # download weights
