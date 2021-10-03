@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 import cv2
 import time
+import os
 from tensorflow.keras.callbacks import (
     ReduceLROnPlateau,
     EarlyStopping,
@@ -102,9 +103,12 @@ def setup_model():
 def get_dataset():
     # hard code some parameters
     MAX_LIMIT = None
-    train_json_path = 'others/train_damage_severity_person.json'
-    val_json_path = 'others/val_damage_severity_person.json'
-    test_json_path = 'others/test_damage_severity_person.json'
+    train_json_path = './others/train_damage_severity_person.json'
+    val_json_path = './others/val_damage_severity_person.json'
+    test_json_path = './others/test_damage_severity_person.json'
+    for path in [train_json_path, val_json_path, test_json_path]:
+        warning_message = f"'{path} does not exist! Please run './multitask/setup_dataset.py'!"
+        assert os.path.isfile(path), warning_message
     
     # get the img paths and annotations
     train_img_paths, train_annots = get_annotation(train_json_path, MAX_LIMIT)
