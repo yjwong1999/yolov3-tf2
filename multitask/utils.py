@@ -1,4 +1,7 @@
 import json
+import tensorflow as tf
+
+yolo_max_boxes = 100
 
 def get_annotation(json_path, max_limit):
     with open(json_path) as f:
@@ -23,7 +26,7 @@ def get_annotation(json_path, max_limit):
                 y2 = bbox['y2']
                 # last 0 is class for person
                 annot += [[float(x1), float(y1), float(x2), float(y2), 0.0]]
-            annot += [[0, 0, 0, 0, 0]] * (FLAGS.yolo_max_boxes - len(annot))
+            annot += [[0, 0, 0, 0, 0]] * (yolo_max_boxes - len(annot))
             annot = tf.convert_to_tensor(annot)
             annots.append(annot)
             count += 1
