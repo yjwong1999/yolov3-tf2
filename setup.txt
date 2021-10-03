@@ -23,3 +23,8 @@
         --output ./checkpoints/pretrained_mobilenet_yolo.tf \
         --backbone mobilenet \
         --num_classes 20
+
+######################################
+# setup dataset for victim dataset
+######################################
+!python ./setup_dataset.py
