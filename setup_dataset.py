@@ -146,3 +146,10 @@ def main(_argv):
     
     for img_paths, json_filename, name in zip(img_paths_collection, json_filenames, names):
         annotate(model_pretrained, img_paths, json_filename, name)    
+
+        
+if __name__ == '__main__':
+    try:
+        app.run(main)
+    except SystemExit:
+        pass
