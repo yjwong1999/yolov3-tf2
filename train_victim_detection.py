@@ -226,8 +226,8 @@ def main(_argv):
     else:
         checkpoint = '{}/yolov3_train'.format(FLAGS.checkpoints) + '_{epoch}.tf'
         callbacks = [
-            ReduceLROnPlateau(verbose=1),
-            EarlyStopping(patience=3, verbose=1),
+            ReduceLROnPlateau(patience=3, verbose=1),
+            EarlyStopping(patience=4, verbose=1),
             ModelCheckpoint(checkpoint,
                             verbose=1, save_weights_only=True),
             TensorBoard(log_dir='logs')
